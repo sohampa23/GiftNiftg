@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import usermodel from '../model/mongobd_usermodel.js';
+import Cart from '../model/CartModel.js'
+import Wishlist from '../model/WishlistModel.js'
 import transporter from '../config/nodemailer.js';
 
 // for register function----
@@ -387,3 +389,40 @@ export const verifyLoginOTP = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
+//add to cart funcnality------
+export const Addtocart = async (req,res) => {
+    const { userId, productId, quantity } = req.body;
+    let cart = await Cart.findOne({ userId });
+    
+    if (!cart) {
+        cart = new Cart({ userId, items: [] });
+    }
+    
+    const itemIndex = cart.items.findIndex(item => item.productId === productId);
+    if (itemIndex > -1) {
+        cart.items[itemIndex].quantity += quantity;
+    } else {
+        cart.items.push({ productId, quantity });
+    }
+    
+    await cart.save();
+    res.json({ message: 'Item added to cart', cart });
+}
+
+//funcaniility of wishlist-----
+export const Addwishlist = async (req,res) => {
+    const { userId, productId } = req.body;
+    let wishlist = await Wishlist.findOne({ userId });
+    
+    if (!wishlist) {
+        wishlist = new Wishlist({ userId, items: [] });
+    }
+    
+    if (!wishlist.items.find(item => item.productId === productId)) {
+        wishlist.items.push({ productId });
+    }
+    
+    await wishlist.save();
+    res.json({ message: 'Item added to wishlist', wishlist });
+}
